@@ -204,8 +204,8 @@ var createOverlay = function createOverlay(_ref) {
           isTouch = false;
         }
         var that = _assertThisInitialized(_this);
-        var x = isTouch ? e.targetTouches.item(0).clientX : e.clientX;
-        var y = isTouch ? e.targetTouches.item(0).clientY : e.clientY;
+        var x = isTouch ? e.touches.item(0).clientX : e.clientX;
+        var y = isTouch ? e.touches.item(0).clientY : e.clientY;
         var origin = that.get('origin'),
           left = origin.clientX - x,
           top = origin.clientY - y,

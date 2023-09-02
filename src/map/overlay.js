@@ -32,9 +32,9 @@ const createOverlay = ({ container, pane, position, maps, drag }) => {
 		}
 
 		handleMove = (e, isTouch = false) => {
-			let that = this;
-			const x = isTouch ? e.targetTouches.item(0).clientX : e.clientX;
-			const y = isTouch ? e.targetTouches.item(0).clientY : e.clientY;
+			let that = this
+			const x = isTouch ? e.touches.item(0).clientX : e.clientX
+			const y = isTouch ? e.touches.item(0).clientY : e.clientY
 
 			let origin = that.get('origin'),
 				left = origin.clientX - x,
@@ -48,7 +48,7 @@ const createOverlay = ({ container, pane, position, maps, drag }) => {
 		}
 
 		handleStart = (e, eventName = 'mousemove') => {
-			let that = this;
+			let that = this
 
 			this.container.style.cursor = 'grabbing'
 			that.map.set('draggable', false)
@@ -79,13 +79,13 @@ const createOverlay = ({ container, pane, position, maps, drag }) => {
 					maps.event.trigger(container, 'mouseup')
 				})
 				maps.event.addDomListener(this.container, 'mousedown', this.handleStart)
-				maps.event.addDomListener(container, 'mouseup',this.handleEnd)
+				maps.event.addDomListener(container, 'mouseup', this.handleEnd)
 
 				maps.event.addDomListener(this.get('map').getDiv(), 'touchcancel', () => {
 					maps.event.trigger(container, 'touchend')
 				})
 				maps.event.addDomListener(this.container, 'touchstart', (e) => this.handleStart(e, 'touchmove'))
-				maps.event.addDomListener(container, 'touchend',this.handleEnd)
+				maps.event.addDomListener(container, 'touchend', this.handleEnd)
 			}
 			// Add the element to the pane.
 			const pane = this.getPanes()[this.pane]
