@@ -2,45 +2,102 @@ import { element, string, shape, number, object, bool, func, node, oneOfType, ar
 import React, { useState, useEffect, useRef, useMemo, Children, isValidElement, cloneElement, useCallback, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 
-const useScript = (script = {
-  src: '',
-  attributes: {},
-  callbacks: {
-    onLoadCallback: null,
-    onErrorCallback: null
-  },
-  elementIdToAppend: null
-}, forcedStatus = undefined) => {
-  const [status, setStatus] = useState(script.src ? 'loading' : 'idle');
-  useEffect(() => {
+function _extends() {
+  _extends = Object.assign ? Object.assign.bind() : function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+    return target;
+  };
+  return _extends.apply(this, arguments);
+}
+function _inheritsLoose(subClass, superClass) {
+  subClass.prototype = Object.create(superClass.prototype);
+  subClass.prototype.constructor = subClass;
+  _setPrototypeOf(subClass, superClass);
+}
+function _setPrototypeOf(o, p) {
+  _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+  return _setPrototypeOf(o, p);
+}
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
+  return target;
+}
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+  return self;
+}
+
+var useScript = function useScript(script, forcedStatus) {
+  if (script === void 0) {
+    script = {
+      src: '',
+      attributes: {},
+      callbacks: {
+        onLoadCallback: null,
+        onErrorCallback: null
+      },
+      elementIdToAppend: null
+    };
+  }
+  if (forcedStatus === void 0) {
+    forcedStatus = undefined;
+  }
+  var _useState = useState(script.src ? 'loading' : 'idle'),
+    status = _useState[0],
+    setStatus = _useState[1];
+  useEffect(function () {
     var _script$callbacks, _script$callbacks2;
     if (forcedStatus) {
       setStatus(forcedStatus);
-      return () => {};
+      return function () {};
     }
     if (!script.src) {
       setStatus('idle');
       return;
     }
-    let scriptToAdd = document.querySelector(`script[src="${script.src}"]`);
+    var scriptToAdd = document.querySelector("script[src=\"" + script.src + "\"]");
     if (!scriptToAdd) {
       scriptToAdd = document.createElement('script');
       scriptToAdd.src = script.src;
       scriptToAdd.async = true;
       scriptToAdd.setAttribute('data-status', 'loading');
-      script.attributes && Object.entries(script.attributes).length > 0 ? Object.entries(script.attributes).map(([key, value]) => scriptToAdd.setAttribute(key, value)) : null;
+      script.attributes && Object.entries(script.attributes).length > 0 ? Object.entries(script.attributes).map(function (_ref) {
+        var key = _ref[0],
+          value = _ref[1];
+        return scriptToAdd.setAttribute(key, value);
+      }) : null;
       if (script.elementIdToAppend && document.getElementById(script.elementIdToAppend)) {
         document.getElementById(script.elementIdToAppend).appendChild(scriptToAdd);
       } else {
         document.body.appendChild(scriptToAdd);
       }
-      const setAttributeFromEvent = event => {
+      var setAttributeFromEvent = function setAttributeFromEvent(event) {
         scriptToAdd.setAttribute('data-status', event.type === 'load' ? 'ready' : 'error');
       };
       scriptToAdd.addEventListener('load', setAttributeFromEvent);
       scriptToAdd.addEventListener('error', setAttributeFromEvent);
     } else {
-      const currentScriptStatus = scriptToAdd.getAttribute('data-status');
+      var currentScriptStatus = scriptToAdd.getAttribute('data-status');
       switch (currentScriptStatus) {
         case 'load':
         case 'ready':
@@ -52,14 +109,14 @@ const useScript = (script = {
       }
       setStatus(currentScriptStatus);
     }
-    const setStateFromEvent = event => {
+    var setStateFromEvent = function setStateFromEvent(event) {
       var _script$callbacks3, _script$callbacks4;
       event.type === 'load' ? (_script$callbacks3 = script.callbacks) !== null && _script$callbacks3 !== void 0 && _script$callbacks3.onLoadCallback ? script.callbacks.onLoadCallback() : null : (_script$callbacks4 = script.callbacks) !== null && _script$callbacks4 !== void 0 && _script$callbacks4.onErrorCallback ? script.callbacks.onErrorCallback() : null;
       setStatus(event.type === 'load' ? 'ready' : 'error');
     };
     scriptToAdd.addEventListener('load', setStateFromEvent);
     scriptToAdd.addEventListener('error', setStateFromEvent);
-    return () => {
+    return function () {
       if (scriptToAdd) {
         scriptToAdd.removeEventListener('load', setStateFromEvent);
         scriptToAdd.removeEventListener('error', setStateFromEvent);
@@ -69,34 +126,36 @@ const useScript = (script = {
   return status;
 };
 
-const useGoogleMaps = ({
-  apiKey,
-  libraries: _libraries = [],
-  loadScriptExternally: _loadScriptExternally = false,
-  status: _status = 'idle',
-  externalApiParams,
-  callback
-}) => {
+var useGoogleMaps = function useGoogleMaps(_ref) {
   var _URLSearchParams;
+  var apiKey = _ref.apiKey,
+    _ref$libraries = _ref.libraries,
+    libraries = _ref$libraries === void 0 ? [] : _ref$libraries,
+    _ref$loadScriptExtern = _ref.loadScriptExternally,
+    loadScriptExternally = _ref$loadScriptExtern === void 0 ? false : _ref$loadScriptExtern,
+    _ref$status = _ref.status,
+    status = _ref$status === void 0 ? 'idle' : _ref$status,
+    externalApiParams = _ref.externalApiParams,
+    callback = _ref.callback;
   if (typeof window !== 'undefined') window.googleMapsCallback = callback;
-  const apiParams = (_URLSearchParams = new URLSearchParams(externalApiParams)) === null || _URLSearchParams === void 0 ? void 0 : _URLSearchParams.toString();
-  const script = apiKey ? {
-    src: `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=googleMapsCallback&libraries=${_libraries === null || _libraries === void 0 ? void 0 : _libraries.join(',')}${apiParams ? '&' + apiParams : ''}`,
+  var apiParams = (_URLSearchParams = new URLSearchParams(externalApiParams)) === null || _URLSearchParams === void 0 ? void 0 : _URLSearchParams.toString();
+  var script = apiKey ? {
+    src: "https://maps.googleapis.com/maps/api/js?key=" + apiKey + "&callback=googleMapsCallback&libraries=" + (libraries === null || libraries === void 0 ? void 0 : libraries.join(',')) + (apiParams ? '&' + apiParams : ''),
     attributes: {
       id: 'googleMapsApi'
     }
   } : {
-    src: `https://maps.googleapis.com/maps/api/js?callback=googleMapsCallback&libraries=${_libraries === null || _libraries === void 0 ? void 0 : _libraries.join(',')}`,
+    src: "https://maps.googleapis.com/maps/api/js?callback=googleMapsCallback&libraries=" + (libraries === null || libraries === void 0 ? void 0 : libraries.join(',')),
     attributes: {
       id: 'googleMapsApi'
     }
   };
-  return useScript(script, _loadScriptExternally ? _status : undefined);
+  return useScript(script, loadScriptExternally ? status : undefined);
 };
 
-const isArraysEqualEps = (arrayA, arrayB, eps) => {
+var isArraysEqualEps = function isArraysEqualEps(arrayA, arrayB, eps) {
   if (arrayA && arrayB) {
-    for (let i = 0; i !== arrayA.length; ++i) {
+    for (var i = 0; i !== arrayA.length; ++i) {
       if (Math.abs(arrayA[i] - arrayB[i]) > eps) {
         return false;
       }
@@ -106,11 +165,11 @@ const isArraysEqualEps = (arrayA, arrayB, eps) => {
   return false;
 };
 
-const useMemoCompare = (next, compare) => {
-  const previousRef = useRef();
-  const previous = previousRef.current;
-  const isEqual = compare(previous, next);
-  useEffect(() => {
+var useMemoCompare = function useMemoCompare(next, compare) {
+  var previousRef = useRef();
+  var previous = previousRef.current;
+  var isEqual = compare(previous, next);
+  useEffect(function () {
     if (!isEqual) {
       previousRef.current = next;
     }
@@ -118,9 +177,9 @@ const useMemoCompare = (next, compare) => {
   return isEqual ? previous : next;
 };
 
-const getLatLng = LatLng => {
+var getLatLng = function getLatLng(LatLng) {
   try {
-    const latLng = {
+    var latLng = {
       lat: LatLng.lat(),
       lng: LatLng.lng()
     };
@@ -129,75 +188,100 @@ const getLatLng = LatLng => {
     return LatLng;
   }
 };
-const createOverlay = ({
-  container,
-  pane,
-  position,
-  maps,
-  drag
-}) => {
-  class Overlay extends maps.OverlayView {
-    constructor(_container, _pane, position) {
-      super();
-      this.onAdd = () => {
-        let that = this;
+var createOverlay = function createOverlay(_ref) {
+  var container = _ref.container,
+    pane = _ref.pane,
+    position = _ref.position,
+    maps = _ref.maps,
+    drag = _ref.drag;
+  var Overlay = /*#__PURE__*/function (_maps$OverlayView) {
+    _inheritsLoose(Overlay, _maps$OverlayView);
+    function Overlay(_container, _pane, position) {
+      var _this;
+      _this = _maps$OverlayView.call(this) || this;
+      _this.handleMove = function (e, isTouch) {
+        if (isTouch === void 0) {
+          isTouch = false;
+        }
+        var that = _assertThisInitialized(_this);
+        var x = isTouch ? e.targetTouches.item(0).clientX : e.clientX;
+        var y = isTouch ? e.targetTouches.item(0).clientY : e.clientY;
+        var origin = that.get('origin'),
+          left = origin.clientX - x,
+          top = origin.clientY - y,
+          pos = that.getProjection().fromLatLngToDivPixel(that.position),
+          latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top));
+        that.set('position', latLng);
+        that.set('origin', e);
+        that.draw();
+        drag.onDrag(e, {
+          latLng: getLatLng(latLng)
+        });
+      };
+      _this.handleStart = function (e, eventName) {
+        if (eventName === void 0) {
+          eventName = 'mousemove';
+        }
+        var that = _assertThisInitialized(_this);
+        _this.container.style.cursor = 'grabbing';
+        that.map.set('draggable', false);
+        that.set('origin', e);
+        drag.onDragStart(e, {
+          latLng: getLatLng(_this.position)
+        });
+        that.moveHandler = maps.event.addDomListener(_this.get('map').getDiv(), eventName, function (e) {
+          return _this.handleMove(e, eventName === 'touchmove');
+        });
+      };
+      _this.handleEnd = function (e) {
+        var that = _assertThisInitialized(_this);
+        that.map.set('draggable', true);
+        _this.container.style.cursor = 'default';
+        maps.event.removeListener(that.moveHandler);
+        drag.onDragEnd(e, {
+          latLng: getLatLng(that.position)
+        });
+      };
+      _this.onAdd = function () {
         if (drag !== null && drag !== void 0 && drag.draggable) {
-          maps.event.addDomListener(this.get('map').getDiv(), 'mouseleave', () => {
+          maps.event.addDomListener(_this.get('map').getDiv(), 'mouseleave', function () {
             maps.event.trigger(container, 'mouseup');
           });
-          maps.event.addDomListener(this.container, 'mousedown', e => {
-            this.container.style.cursor = 'grabbing';
-            that.map.set('draggable', false);
-            that.set('origin', e);
-            drag.onDragStart(e, {
-              latLng: getLatLng(this.position)
-            });
-            that.moveHandler = maps.event.addDomListener(this.get('map').getDiv(), 'mousemove', e => {
-              let origin = that.get('origin'),
-                left = origin.clientX - e.clientX,
-                top = origin.clientY - e.clientY,
-                pos = that.getProjection().fromLatLngToDivPixel(that.position),
-                latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top));
-              that.set('position', latLng);
-              that.set('origin', e);
-              that.draw();
-              drag.onDrag(e, {
-                latLng: getLatLng(latLng)
-              });
-            });
+          maps.event.addDomListener(_this.container, 'mousedown', _this.handleStart);
+          maps.event.addDomListener(container, 'mouseup', _this.handleEnd);
+          maps.event.addDomListener(_this.get('map').getDiv(), 'touchcancel', function () {
+            maps.event.trigger(container, 'touchend');
           });
-          maps.event.addDomListener(container, 'mouseup', e => {
-            that.map.set('draggable', true);
-            this.container.style.cursor = 'default';
-            maps.event.removeListener(that.moveHandler);
-            drag.onDragEnd(e, {
-              latLng: getLatLng(that.position)
-            });
+          maps.event.addDomListener(_this.container, 'touchstart', function (e) {
+            return _this.handleStart(e, 'touchmove');
           });
+          maps.event.addDomListener(container, 'touchend', _this.handleEnd);
         }
-        const pane = this.getPanes()[this.pane];
+        var pane = _this.getPanes()[_this.pane];
         pane === null || pane === void 0 ? void 0 : pane.classList.add('google-map-markers-overlay');
-        pane === null || pane === void 0 ? void 0 : pane.appendChild(this.container);
+        pane === null || pane === void 0 ? void 0 : pane.appendChild(_this.container);
       };
-      this.draw = () => {
-        const projection = this.getProjection();
-        const point = projection.fromLatLngToDivPixel(this.position);
+      _this.draw = function () {
+        var projection = _this.getProjection();
+        var point = projection.fromLatLngToDivPixel(_this.position);
         if (point === null) return;
-        this.container.style.transform = `translate(${point.x}px, ${point.y}px)`;
-        this.container.style.width = '0px';
-        this.container.style.height = '0px';
+        _this.container.style.transform = "translate(" + point.x + "px, " + point.y + "px)";
+        _this.container.style.width = '0px';
+        _this.container.style.height = '0px';
       };
-      this.onRemove = () => {
-        if (this.container.parentNode !== null) {
-          maps.event.clearInstanceListeners(this.container);
-          this.container.parentNode.removeChild(this.container);
+      _this.onRemove = function () {
+        if (_this.container.parentNode !== null) {
+          maps.event.clearInstanceListeners(_this.container);
+          _this.container.parentNode.removeChild(_this.container);
         }
       };
-      this.container = _container;
-      this.pane = _pane;
-      this.position = position;
+      _this.container = _container;
+      _this.pane = _pane;
+      _this.position = position;
+      return _this;
     }
-  }
+    return Overlay;
+  }(maps.OverlayView);
   return new Overlay(container, pane, position);
 };
 createOverlay.propTypes = {
@@ -216,43 +300,44 @@ createOverlay.propTypes = {
   })
 };
 
-const OverlayView = ({
-  pane: _pane = 'floatPane',
-  position,
-  map,
-  maps,
-  zIndex: _zIndex = 0,
-  children,
-  drag
-}) => {
-  const container = useMemo(() => {
-    const div = document.createElement('div');
+var OverlayView = function OverlayView(_ref) {
+  var _ref$pane = _ref.pane,
+    pane = _ref$pane === void 0 ? 'floatPane' : _ref$pane,
+    position = _ref.position,
+    map = _ref.map,
+    maps = _ref.maps,
+    _ref$zIndex = _ref.zIndex,
+    zIndex = _ref$zIndex === void 0 ? 0 : _ref$zIndex,
+    children = _ref.children,
+    drag = _ref.drag;
+  var container = useMemo(function () {
+    var div = document.createElement('div');
     div.style.position = 'absolute';
     return div;
   }, []);
-  const overlay = useMemo(() => {
+  var overlay = useMemo(function () {
     return createOverlay({
-      container,
-      pane: _pane,
-      position,
-      maps,
-      drag
+      container: container,
+      pane: pane,
+      position: position,
+      maps: maps,
+      drag: drag
     });
-  }, [container, drag, maps, _pane, position]);
-  const childrenProps = useMemoCompare(children === null || children === void 0 ? void 0 : children.props, (prev, next) => {
+  }, [container, drag, maps, pane, position]);
+  var childrenProps = useMemoCompare(children === null || children === void 0 ? void 0 : children.props, function (prev, next) {
     return prev && prev.lat === next.lat && prev.lng === next.lng;
   });
-  useEffect(() => {
+  useEffect(function () {
     if (!overlay.map) {
       overlay === null || overlay === void 0 ? void 0 : overlay.setMap(map);
-      return () => {
+      return function () {
         overlay === null || overlay === void 0 ? void 0 : overlay.setMap(null);
       };
     }
   }, [map, childrenProps]);
-  useEffect(() => {
-    container.style.zIndex = `${_zIndex}`;
-  }, [_zIndex, container]);
+  useEffect(function () {
+    container.style.zIndex = "" + zIndex;
+  }, [zIndex, container]);
   return /*#__PURE__*/createPortal(children, container);
 };
 OverlayView.propTypes = {
@@ -273,44 +358,45 @@ OverlayView.propTypes = {
   })
 };
 
-const noop = () => {};
-const MapMarkers = ({
-  children,
-  map,
-  maps
-}) => {
-  const markers = useMemo(() => {
+var noop = function noop() {};
+var MapMarkers = function MapMarkers(_ref) {
+  var children = _ref.children,
+    map = _ref.map,
+    maps = _ref.maps;
+  var markers = useMemo(function () {
     if (!map || !maps) return [];
-    return Children.map(children, child => {
+    return Children.map(children, function (child) {
       if ( /*#__PURE__*/isValidElement(child)) {
-        const latLng = {
+        var latLng = {
           lat: child.props.lat,
           lng: child.props.lng
         };
-        const {
-          zIndex,
-          draggable = false,
-          onDragStart = noop,
-          onDrag = noop,
-          onDragEnd = noop
-        } = child.props || {};
-        child = /*#__PURE__*/cloneElement(child, {
-          ...child.props,
+        var _ref2 = child.props || {},
+          zIndex = _ref2.zIndex,
+          _ref2$draggable = _ref2.draggable,
+          draggable = _ref2$draggable === void 0 ? false : _ref2$draggable,
+          _ref2$onDragStart = _ref2.onDragStart,
+          onDragStart = _ref2$onDragStart === void 0 ? noop : _ref2$onDragStart,
+          _ref2$onDrag = _ref2.onDrag,
+          onDrag = _ref2$onDrag === void 0 ? noop : _ref2$onDrag,
+          _ref2$onDragEnd = _ref2.onDragEnd,
+          onDragEnd = _ref2$onDragEnd === void 0 ? noop : _ref2$onDragEnd;
+        child = /*#__PURE__*/cloneElement(child, _extends({}, child.props, {
           draggable: undefined,
           onDragStart: undefined,
           onDrag: undefined,
           onDragEnd: undefined
-        });
+        }));
         return /*#__PURE__*/React.createElement(OverlayView, {
           position: latLng,
           map: map,
           maps: maps,
           zIndex: zIndex,
           drag: {
-            draggable,
-            onDragStart,
-            onDrag,
-            onDragEnd
+            draggable: draggable,
+            onDragStart: onDragStart,
+            onDrag: onDrag,
+            onDragEnd: onDragEnd
           }
         }, child);
       }
@@ -324,44 +410,55 @@ MapMarkers.propTypes = {
   maps: object.isRequired
 };
 
-const EPS = 0.00001;
-const MapComponent = ({
-  children: _children = null,
-  style: _style = {
-    width: '100%',
-    height: '100%',
-    left: 0,
-    top: 0,
-    margin: 0,
-    padding: 0,
-    position: 'absolute'
-  },
-  defaultCenter,
-  defaultZoom,
-  onGoogleApiLoaded: _onGoogleApiLoaded = () => {},
-  onChange: _onChange = () => {},
-  options: _options = {},
-  events: _events = []
-}) => {
-  const mapRef = useRef(null);
-  const prevBoundsRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [maps, setMaps] = useState(null);
-  const [googleApiCalled, setGoogleApiCalled] = useState(false);
-  const onIdle = useCallback(() => {
+var EPS = 0.00001;
+var MapComponent = function MapComponent(_ref) {
+  var _ref$children = _ref.children,
+    children = _ref$children === void 0 ? null : _ref$children,
+    _ref$style = _ref.style,
+    style = _ref$style === void 0 ? {
+      width: '100%',
+      height: '100%',
+      left: 0,
+      top: 0,
+      margin: 0,
+      padding: 0,
+      position: 'absolute'
+    } : _ref$style,
+    defaultCenter = _ref.defaultCenter,
+    defaultZoom = _ref.defaultZoom,
+    _ref$onGoogleApiLoade = _ref.onGoogleApiLoaded,
+    onGoogleApiLoaded = _ref$onGoogleApiLoade === void 0 ? function () {} : _ref$onGoogleApiLoade,
+    _ref$onChange = _ref.onChange,
+    onChange = _ref$onChange === void 0 ? function () {} : _ref$onChange,
+    _ref$options = _ref.options,
+    options = _ref$options === void 0 ? {} : _ref$options,
+    _ref$events = _ref.events,
+    events = _ref$events === void 0 ? [] : _ref$events;
+  var mapRef = useRef(null);
+  var prevBoundsRef = useRef(null);
+  var _useState = useState(null),
+    map = _useState[0],
+    setMap = _useState[1];
+  var _useState2 = useState(null),
+    maps = _useState2[0],
+    setMaps = _useState2[1];
+  var _useState3 = useState(false),
+    googleApiCalled = _useState3[0],
+    setGoogleApiCalled = _useState3[1];
+  var onIdle = useCallback(function () {
     try {
-      const zoom = map.getZoom();
-      const bounds = map.getBounds();
-      const centerLatLng = map.getCenter();
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-      const boundsArray = [sw.lng(), sw.lat(), ne.lng(), ne.lat()];
+      var zoom = map.getZoom();
+      var bounds = map.getBounds();
+      var centerLatLng = map.getCenter();
+      var ne = bounds.getNorthEast();
+      var sw = bounds.getSouthWest();
+      var boundsArray = [sw.lng(), sw.lat(), ne.lng(), ne.lat()];
       if (!isArraysEqualEps(boundsArray, prevBoundsRef.current, EPS)) {
-        if (_onChange) {
-          _onChange({
-            zoom,
+        if (onChange) {
+          onChange({
+            zoom: zoom,
             center: [centerLatLng.lng(), centerLatLng.lat()],
-            bounds
+            bounds: bounds
           });
         }
         prevBoundsRef.current = boundsArray;
@@ -369,23 +466,22 @@ const MapComponent = ({
     } catch (e) {
       console.error(e);
     }
-  }, [map, _onChange]);
-  useEffect(() => {
+  }, [map, onChange]);
+  useEffect(function () {
     if (mapRef.current && !map) {
-      setMap(new window.google.maps.Map(mapRef.current, {
+      setMap(new window.google.maps.Map(mapRef.current, _extends({
         center: defaultCenter,
-        zoom: defaultZoom,
-        ..._options
-      }));
+        zoom: defaultZoom
+      }, options)));
       setMaps(window.google.maps);
     }
-  }, [defaultCenter, defaultZoom, map, mapRef, _options]);
-  useEffect(() => {
+  }, [defaultCenter, defaultZoom, map, mapRef, options]);
+  useEffect(function () {
     if (map) {
       if (!googleApiCalled) {
-        _onGoogleApiLoaded({
-          map,
-          maps,
+        onGoogleApiLoaded({
+          map: map,
+          maps: maps,
           ref: mapRef.current
         });
         setGoogleApiCalled(true);
@@ -393,28 +489,28 @@ const MapComponent = ({
       window.google.maps.event.clearListeners(map, 'idle');
       window.google.maps.event.addListener(map, 'idle', onIdle);
     }
-  }, [googleApiCalled, map, maps, _onChange, _onGoogleApiLoaded, onIdle]);
-  useEffect(() => {
-    return () => {
+  }, [googleApiCalled, map, maps, onChange, onGoogleApiLoaded, onIdle]);
+  useEffect(function () {
+    return function () {
       if (map) {
         window.google.maps.event.clearListeners(map, 'idle');
       }
     };
   }, [map]);
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", Object.assign({
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", _extends({
     ref: mapRef,
-    style: _style,
+    style: style,
     className: "google-map"
-  }, _events === null || _events === void 0 ? void 0 : _events.reduce((acc, {
-    name,
-    handler
-  } = {}) => {
+  }, events === null || events === void 0 ? void 0 : events.reduce(function (acc, _temp) {
+    var _ref2 = _temp === void 0 ? {} : _temp,
+      name = _ref2.name,
+      handler = _ref2.handler;
     acc[name] = handler;
     return acc;
-  }, {}))), _children && map && maps && /*#__PURE__*/React.createElement(MapMarkers, {
+  }, {}))), children && map && maps && /*#__PURE__*/React.createElement(MapMarkers, {
     map: map,
     maps: maps
-  }, _children));
+  }, children));
 };
 MapComponent.propTypes = {
   children: oneOfType([arrayOf(node), node]),
@@ -430,36 +526,48 @@ MapComponent.propTypes = {
   }))
 };
 
-const GoogleMap = /*#__PURE__*/forwardRef(function GoogleMap({
-  apiKey = '',
-  libraries = ['places', 'geometry'],
-  children = null,
-  loadingContent = 'Google Maps is loading',
-  idleContent = 'Google Maps is on idle',
-  errorContent = 'Google Maps is on error',
-  mapMinHeight = 'unset',
-  containerProps = {},
-  loadScriptExternally = false,
-  status = 'idle',
-  scriptCallback = () => {},
-  externalApiParams = {},
-  ...props
-}, ref) {
-  const renderers = {
+var _excluded = ["apiKey", "libraries", "children", "loadingContent", "idleContent", "errorContent", "mapMinHeight", "containerProps", "loadScriptExternally", "status", "scriptCallback", "externalApiParams"];
+var GoogleMap = /*#__PURE__*/forwardRef(function GoogleMap(_ref, ref) {
+  var _ref$apiKey = _ref.apiKey,
+    apiKey = _ref$apiKey === void 0 ? '' : _ref$apiKey,
+    _ref$libraries = _ref.libraries,
+    libraries = _ref$libraries === void 0 ? ['places', 'geometry'] : _ref$libraries,
+    _ref$children = _ref.children,
+    children = _ref$children === void 0 ? null : _ref$children,
+    _ref$loadingContent = _ref.loadingContent,
+    loadingContent = _ref$loadingContent === void 0 ? 'Google Maps is loading' : _ref$loadingContent,
+    _ref$idleContent = _ref.idleContent,
+    idleContent = _ref$idleContent === void 0 ? 'Google Maps is on idle' : _ref$idleContent,
+    _ref$errorContent = _ref.errorContent,
+    errorContent = _ref$errorContent === void 0 ? 'Google Maps is on error' : _ref$errorContent,
+    _ref$mapMinHeight = _ref.mapMinHeight,
+    mapMinHeight = _ref$mapMinHeight === void 0 ? 'unset' : _ref$mapMinHeight,
+    _ref$containerProps = _ref.containerProps,
+    containerProps = _ref$containerProps === void 0 ? {} : _ref$containerProps,
+    _ref$loadScriptExtern = _ref.loadScriptExternally,
+    loadScriptExternally = _ref$loadScriptExtern === void 0 ? false : _ref$loadScriptExtern,
+    _ref$status = _ref.status,
+    status = _ref$status === void 0 ? 'idle' : _ref$status,
+    _ref$scriptCallback = _ref.scriptCallback,
+    scriptCallback = _ref$scriptCallback === void 0 ? function () {} : _ref$scriptCallback,
+    _ref$externalApiParam = _ref.externalApiParams,
+    externalApiParams = _ref$externalApiParam === void 0 ? {} : _ref$externalApiParam,
+    props = _objectWithoutPropertiesLoose(_ref, _excluded);
+  var renderers = {
     ready: /*#__PURE__*/React.createElement(MapComponent, props, children),
     loading: loadingContent,
     idle: idleContent,
     error: errorContent
   };
-  const _status = useGoogleMaps({
-    apiKey,
-    libraries,
-    loadScriptExternally,
-    status,
-    externalApiParams,
+  var _status = useGoogleMaps({
+    apiKey: apiKey,
+    libraries: libraries,
+    loadScriptExternally: loadScriptExternally,
+    status: status,
+    externalApiParams: externalApiParams,
     callback: scriptCallback
   });
-  return /*#__PURE__*/React.createElement("div", Object.assign({
+  return /*#__PURE__*/React.createElement("div", _extends({
     style: {
       height: '100%',
       width: '100%',
@@ -470,8 +578,7 @@ const GoogleMap = /*#__PURE__*/forwardRef(function GoogleMap({
     ref: ref
   }, containerProps), renderers[_status] || null);
 });
-GoogleMap.propTypes = {
-  ...MapComponent.propTypes,
+GoogleMap.propTypes = _extends({}, MapComponent.propTypes, {
   children: oneOfType([node, arrayOf(node)]),
   loadingContent: node,
   idleContent: node,
@@ -482,7 +589,7 @@ GoogleMap.propTypes = {
   status: oneOf(['idle', 'loading', 'ready', 'error']),
   scriptCallback: func,
   externalApiParams: object
-};
+});
 
 export default GoogleMap;
 //# sourceMappingURL=index.modern.js.map

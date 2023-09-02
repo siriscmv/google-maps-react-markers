@@ -31,43 +31,61 @@ const createOverlay = ({ container, pane, position, maps, drag }) => {
 			this.position = position
 		}
 
+		handleMove = (e, isTouch = false) => {
+			let that = this;
+			const x = isTouch ? e.targetTouches.item(0).clientX : e.clientX;
+			const y = isTouch ? e.targetTouches.item(0).clientY : e.clientY;
+
+			let origin = that.get('origin'),
+				left = origin.clientX - x,
+				top = origin.clientY - y,
+				pos = that.getProjection().fromLatLngToDivPixel(that.position),
+				latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top))
+			that.set('position', latLng)
+			that.set('origin', e)
+			that.draw()
+			drag.onDrag(e, { latLng: getLatLng(latLng) })
+		}
+
+		handleStart = (e, eventName = 'mousemove') => {
+			let that = this;
+
+			this.container.style.cursor = 'grabbing'
+			that.map.set('draggable', false)
+			that.set('origin', e)
+
+			drag.onDragStart(e, { latLng: getLatLng(this.position) })
+
+			that.moveHandler = maps.event.addDomListener(this.get('map').getDiv(), eventName, (e) => this.handleMove(e, eventName === 'touchmove'))
+		}
+
+		handleEnd = (e) => {
+			let that = this;
+
+			that.map.set('draggable', true)
+			this.container.style.cursor = 'default'
+			maps.event.removeListener(that.moveHandler)
+			drag.onDragEnd(e, { latLng: getLatLng(that.position) })
+		}
+
 		/**
 		 * onAdd is called when the map's panes are ready and the overlay has been
 		 * added to the map.
 		 */
 		onAdd = () => {
-			let that = this
 			// manage draggable
 			if (drag?.draggable) {
 				maps.event.addDomListener(this.get('map').getDiv(), 'mouseleave', () => {
 					maps.event.trigger(container, 'mouseup')
 				})
-				maps.event.addDomListener(this.container, 'mousedown', (e) => {
-					this.container.style.cursor = 'grabbing'
-					that.map.set('draggable', false)
-					that.set('origin', e)
+				maps.event.addDomListener(this.container, 'mousedown', this.handleStart)
+				maps.event.addDomListener(container, 'mouseup',this.handleEnd)
 
-					drag.onDragStart(e, { latLng: getLatLng(this.position) })
-
-					that.moveHandler = maps.event.addDomListener(this.get('map').getDiv(), 'mousemove', (e) => {
-						let origin = that.get('origin'),
-							left = origin.clientX - e.clientX,
-							top = origin.clientY - e.clientY,
-							pos = that.getProjection().fromLatLngToDivPixel(that.position),
-							latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top))
-						that.set('position', latLng)
-						that.set('origin', e)
-						that.draw()
-						drag.onDrag(e, { latLng: getLatLng(latLng) })
-					})
+				maps.event.addDomListener(this.get('map').getDiv(), 'touchcancel', () => {
+					maps.event.trigger(container, 'touchend')
 				})
-
-				maps.event.addDomListener(container, 'mouseup', (e) => {
-					that.map.set('draggable', true)
-					this.container.style.cursor = 'default'
-					maps.event.removeListener(that.moveHandler)
-					drag.onDragEnd(e, { latLng: getLatLng(that.position) })
-				})
+				maps.event.addDomListener(this.container, 'touchstart', (e) => this.handleStart(e, 'touchmove'))
+				maps.event.addDomListener(container, 'touchend',this.handleEnd)
 			}
 			// Add the element to the pane.
 			const pane = this.getPanes()[this.pane]

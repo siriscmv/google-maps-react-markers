@@ -202,41 +202,63 @@ var createOverlay = function createOverlay(_ref) {
     function Overlay(_container, _pane, position) {
       var _this;
       _this = _maps$OverlayView.call(this) || this;
-      _this.onAdd = function () {
+      _this.handleMove = function (e, isTouch) {
+        if (isTouch === void 0) {
+          isTouch = false;
+        }
         var that = _assertThisInitialized(_this);
+        var x = isTouch ? e.targetTouches.item(0).clientX : e.clientX;
+        var y = isTouch ? e.targetTouches.item(0).clientY : e.clientY;
+        var origin = that.get('origin'),
+          left = origin.clientX - x,
+          top = origin.clientY - y,
+          pos = that.getProjection().fromLatLngToDivPixel(that.position),
+          latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top));
+        that.set('position', latLng);
+        that.set('origin', e);
+        that.draw();
+        drag.onDrag(e, {
+          latLng: getLatLng(latLng)
+        });
+      };
+      _this.handleStart = function (e, eventName) {
+        if (eventName === void 0) {
+          eventName = 'mousemove';
+        }
+        var that = _assertThisInitialized(_this);
+        _this.container.style.cursor = 'grabbing';
+        that.map.set('draggable', false);
+        that.set('origin', e);
+        drag.onDragStart(e, {
+          latLng: getLatLng(_this.position)
+        });
+        that.moveHandler = maps.event.addDomListener(_this.get('map').getDiv(), eventName, function (e) {
+          return _this.handleMove(e, eventName === 'touchmove');
+        });
+      };
+      _this.handleEnd = function (e) {
+        var that = _assertThisInitialized(_this);
+        that.map.set('draggable', true);
+        _this.container.style.cursor = 'default';
+        maps.event.removeListener(that.moveHandler);
+        drag.onDragEnd(e, {
+          latLng: getLatLng(that.position)
+        });
+      };
+      _this.onAdd = function () {
         if (drag !== null && drag !== void 0 && drag.draggable) {
           maps.event.addDomListener(_this.get('map').getDiv(), 'mouseleave', function () {
             maps.event.trigger(container, 'mouseup');
           });
-          maps.event.addDomListener(_this.container, 'mousedown', function (e) {
-            _this.container.style.cursor = 'grabbing';
-            that.map.set('draggable', false);
-            that.set('origin', e);
-            drag.onDragStart(e, {
-              latLng: getLatLng(_this.position)
-            });
-            that.moveHandler = maps.event.addDomListener(_this.get('map').getDiv(), 'mousemove', function (e) {
-              var origin = that.get('origin'),
-                left = origin.clientX - e.clientX,
-                top = origin.clientY - e.clientY,
-                pos = that.getProjection().fromLatLngToDivPixel(that.position),
-                latLng = that.getProjection().fromDivPixelToLatLng(new maps.Point(pos.x - left, pos.y - top));
-              that.set('position', latLng);
-              that.set('origin', e);
-              that.draw();
-              drag.onDrag(e, {
-                latLng: getLatLng(latLng)
-              });
-            });
+          maps.event.addDomListener(_this.container, 'mousedown', _this.handleStart);
+          maps.event.addDomListener(container, 'mouseup', _this.handleEnd);
+          maps.event.addDomListener(_this.get('map').getDiv(), 'touchcancel', function () {
+            maps.event.trigger(container, 'touchend');
           });
-          maps.event.addDomListener(container, 'mouseup', function (e) {
-            that.map.set('draggable', true);
-            _this.container.style.cursor = 'default';
-            maps.event.removeListener(that.moveHandler);
-            drag.onDragEnd(e, {
-              latLng: getLatLng(that.position)
-            });
+          maps.event.addDomListener(_this.container, 'touchstart', function (e) {
+            return _this.handleStart(e, 'touchmove');
           });
+          maps.event.addDomListener(container, 'touchend', _this.handleEnd);
         }
         var pane = _this.getPanes()[_this.pane];
         pane === null || pane === void 0 ? void 0 : pane.classList.add('google-map-markers-overlay');
